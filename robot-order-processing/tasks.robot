@@ -1,7 +1,8 @@
 *** Settings ***
-Library           RPA.Browser.Selenium
+Library           RPA.Browser.Selenium    auto_close=${FALSE}
 Library           RPA.HTTP
 Library           RPA.Tables
+Library           RPA.PDF
 Documentation     Order robots from RobotSpareBin Industries inc.
 ...               Saves the order HTML as a PDF for later review.
 ...               Saves a screenshot to confirm the order.
@@ -16,9 +17,9 @@ Order robots from RobotSpareBin Industries Inc
         Close the annoying modal
         Fill the form    ${row}
         Preview the robot
-        Submit the order
-    #     ${pdf}=    Store the receipt as a PDF file    ${row}[Order number]
-    #     ${screenshot}=    Take a screenshot of the robot    ${row}[Order number]
+        Wait Until Keyword Succeeds    10x    0.5s    Submit the order
+        ${pdf}=    Store the receipt as a PDF file    ${row}[Order number]
+        ${screenshot}=    Take a screenshot of the robot    ${row}[Order number]
     #     Embed the robot screenshot to the receipt PDF file    ${screenshot}    ${pdf}
         Go to order another robot
     END
@@ -26,7 +27,7 @@ Order robots from RobotSpareBin Industries Inc
 
 *** Keywords ***
 Open the robot order website
-    Open Available Browser    https://robotsparebinindustries.com/
+    Open Available Browser    https://robotsparebinindustries.com/#/robot-order
     Log    Website Opened.
 
 Get orders
@@ -35,9 +36,7 @@ Get orders
     Log    Orders Obtained.
     [Return]    ${orders}
 
-
 Close the annoying modal
-    Open Available Browser    https://robotsparebinindustries.com/#/robot-order
     Click Button    OK
     Log    Modal Dismissed.
 
@@ -45,7 +44,8 @@ Fill the form
     [Arguments]    ${order}
     Select From List By Index    head    ${order}[Head]
     Select Radio Button    body    ${order}[Body]
-    # Select from List by Value    1650594198635    ${order}[Legs]
+    ${form-name}=    Get Element Attribute    class:form-control     name
+    Input Text    ${form-name}    ${order}[Legs]
     Input Text    address    ${order}[Address]
 
 Preview the robot
@@ -53,6 +53,17 @@ Preview the robot
 
 Submit the order
     Click Button    order
+    Page Should Contain Button    order-another
+
+Store the receipt as a PDF file
+    [Arguments]    ${order-number}
+    ${receipt-html}=    Get Element Attribute    id:order-completion    HTML
+    Html To Pdf    ${receipt-html}    ${OUTPUT_DIR}${/}${order-number}-Receipt.pdf
+    Log    PDF Generated.
+
+Take a screenshot of the robot
+    [Arguments]    ${order-number}
+    Log    Screenshot capture.
 
 Go to order another robot
     Click Button    order-another
