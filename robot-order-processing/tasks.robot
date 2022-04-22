@@ -17,12 +17,13 @@ Order robots from RobotSpareBin Industries Inc
         Close the annoying modal
         Fill the form    ${row}
         Preview the robot
+        ${screenshot}=    Take a screenshot of the robot    ${row}[Order number]
         Wait Until Keyword Succeeds    10x    0.5s    Submit the order
         ${pdf}=    Store the receipt as a PDF file    ${row}[Order number]
-        ${screenshot}=    Take a screenshot of the robot    ${row}[Order number]
-    #     Embed the robot screenshot to the receipt PDF file    ${screenshot}    ${pdf}
+        Embed the robot screenshot to the receipt PDF file    ${screenshot}    ${pdf}
         Go to order another robot
     END
+    Close the annoying modal
     # Create a ZIP file of the receipts
 
 *** Keywords ***
@@ -57,13 +58,23 @@ Submit the order
 
 Store the receipt as a PDF file
     [Arguments]    ${order-number}
-    ${receipt-html}=    Get Element Attribute    id:order-completion    HTML
-    Html To Pdf    ${receipt-html}    ${OUTPUT_DIR}${/}${order-number}-Receipt.pdf
-    Log    PDF Generated.
+    ${receipt-html}=    Get Element Attribute    id:order-completion    outerHTML
+    Html To Pdf    ${receipt-html}    ${OUTPUT_DIR}${/}Receipts${/}${order-number}-Receipt.pdf
+    [Return]    ${OUTPUT_DIR}${/}Receipts${/}${order-number}-Receipt.pdf
 
 Take a screenshot of the robot
     [Arguments]    ${order-number}
+    Screenshot    robot-preview    ${OUTPUT_DIR}${/}Screenshots${/}${order-number}-Screenshot.png
     Log    Screenshot capture.
+    [Return]    ${OUTPUT_DIR}${/}Screenshots${/}${order-number}-Screenshot.png  
+
+Embed the robot screenshot to the receipt PDF file
+    [Arguments]    ${pdf}    ${screenshot}
+    Open Pdf    ${pdf}
+    ${files}=    Create List
+    ...    ${screenshot}:align-center 
+    Add Files To Pdf    ${files}    ${pdf}    append=TRUE
+    Close Pdf    ${pdf}
 
 Go to order another robot
     Click Button    order-another
