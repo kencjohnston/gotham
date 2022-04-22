@@ -2,6 +2,7 @@
 Library           RPA.Browser.Selenium    auto_close=${FALSE}
 Library           RPA.HTTP
 Library           RPA.Tables
+Library           RPA.Archive
 Library           RPA.PDF
 Documentation     Order robots from RobotSpareBin Industries inc.
 ...               Saves the order HTML as a PDF for later review.
@@ -24,7 +25,7 @@ Order robots from RobotSpareBin Industries Inc
         Go to order another robot
     END
     Close the annoying modal
-    # Create a ZIP file of the receipts
+    Create a ZIP file of the receipts
 
 *** Keywords ***
 Open the robot order website
@@ -64,17 +65,20 @@ Store the receipt as a PDF file
 
 Take a screenshot of the robot
     [Arguments]    ${order-number}
+    Wait Until Element Is Visible    robot-preview
     Screenshot    robot-preview    ${OUTPUT_DIR}${/}Screenshots${/}${order-number}-Screenshot.png
     Log    Screenshot capture.
     [Return]    ${OUTPUT_DIR}${/}Screenshots${/}${order-number}-Screenshot.png  
 
 Embed the robot screenshot to the receipt PDF file
-    [Arguments]    ${pdf}    ${screenshot}
+    [Arguments]    ${screenshot}    ${pdf}
     Open Pdf    ${pdf}
-    ${files}=    Create List
-    ...    ${screenshot}:align-center 
-    Add Files To Pdf    ${files}    ${pdf}    append=TRUE
+    Add Watermark Image To Pdf    ${screenshot}    ${pdf}
     Close Pdf    ${pdf}
 
 Go to order another robot
     Click Button    order-another
+
+Create a ZIP file of the receipts
+    ${zip_file_name}=    Set Variable    ${OUTPUT_DIR}${/}PDFs.zip
+    Archive Folder With Zip    ${OUTPUT_DIR}${/}Receipts    ${zip_file_name}
